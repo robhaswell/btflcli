@@ -93,13 +93,15 @@ func dumpBoard(cmd *cobra.Command, args []string) {
 		// Read a line from the flight controller
 		line := scanner.Text()
 		if strings.Contains(line, "Entering CLI Mode") {
+			// Read one more blank link from the FC.
+			scanner.Scan()
 			break
 		}
 	}
 
 	// Request a diff
 	fc.Port.Write([]byte("diff all\r\n"))
-	diffAll := readFcDump(*scanner)
+	diffAll := readFcDump(scanner)
 
 	// Make the output directory if it doesn't exist
 	os.MkdirAll(fc.Name, os.ModePerm)
@@ -110,9 +112,12 @@ func dumpBoard(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
+	// reader.Reset(fc.Port)
+	// log.Println(scanner.Text())
+
 	// Request a dump
 	fc.Port.Write([]byte("dump all\r\n"))
-	dumpAll := readFcDump(*scanner)
+	dumpAll := readFcDump(scanner)
 
 	// Write the dump to a file
 	err = os.WriteFile(dumpFilename, []byte(dumpAll), 0644)
@@ -124,7 +129,7 @@ func dumpBoard(cmd *cobra.Command, args []string) {
 	closeFcCli(fc.Port)
 }
 
-func readFcDump(scanner bufio.Scanner) string {
+func readFcDump(scanner *bufio.Scanner) string {
 	output := ""
 
 	timeStart := time.Now()
