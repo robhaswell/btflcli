@@ -30,7 +30,7 @@ import (
 	"io"
 	"reflect"
 
-	"github.com/tarm/serial"
+	"go.bug.st/serial"
 )
 
 const (
@@ -39,6 +39,8 @@ const (
 	MspFCVersion  = 3
 	MspBoardInfo  = 4
 	MspBuildInfo  = 5
+
+	MspName = 10
 
 	MspFeature    = 36
 	MspSetFeature = 37
@@ -132,7 +134,7 @@ func crc8DvbS2(crc, a byte) byte {
 type MSP struct {
 	portName string
 	baudRate int
-	port     *serial.Port
+	Port     serial.Port
 }
 
 type MSPFrame struct {
@@ -227,18 +229,17 @@ func (e *mspOOBErr) Error() string {
 }
 
 func New(portName string, baudRate int) (*MSP, error) {
-	opts := &serial.Config{
-		Name: portName,
-		Baud: baudRate,
+	mode := &serial.Mode{
+		BaudRate: baudRate,
 	}
-	port, err := serial.OpenPort(opts)
+	port, err := serial.Open(portName, mode)
 	if err != nil {
 		return nil, err
 	}
 	return &MSP{
 		portName: portName,
 		baudRate: baudRate,
-		port:     port,
+		Port:     port,
 	}, nil
 }
 
@@ -282,12 +283,12 @@ func (m *MSP) WriteCmd(cmd uint16, args ...interface{}) (int, error) {
 	}
 	data := buf.Bytes()
 	frame := mspV1Encode(byte(cmd), data)
-	return m.port.Write(frame)
+	return m.Port.Write(frame)
 }
 
 func (m *MSP) readMSPV1Frame() (*MSPFrame, error) {
 	buf := make([]byte, 3)
-	if _, err := m.port.Read(buf); err != nil {
+	if _, err := m.Port.Read(buf); err != nil {
 		return nil, err
 	}
 	if buf[0] != '<' && buf[0] != '>' {
@@ -301,7 +302,7 @@ func (m *MSP) readMSPV1Frame() (*MSPFrame, error) {
 	cmd := buf[2]
 	if payloadLength > 0 {
 		payload = make([]byte, payloadLength)
-		if _, err := io.ReadFull(m.port, payload); err != nil {
+		if _, err := io.ReadFull(m.Port, payload); err != nil {
 			return nil, err
 		}
 		for _, b := range payload {
@@ -309,7 +310,7 @@ func (m *MSP) readMSPV1Frame() (*MSPFrame, error) {
 		}
 	}
 	buf = buf[:1]
-	if _, err := m.port.Read(buf); err != nil {
+	if _, err := m.Port.Read(buf); err != nil {
 		return nil, err
 	}
 	crc := buf[0]
@@ -330,7 +331,7 @@ func (m *MSP) readMSPV1Frame() (*MSPFrame, error) {
 
 func (m *MSP) readMSPV2Frame() (*MSPFrame, error) {
 	buf := make([]byte, 6)
-	if _, err := m.port.Read(buf); err != nil {
+	if _, err := m.Port.Read(buf); err != nil {
 		return nil, err
 	}
 	if buf[0] != '<' && buf[0] != '>' {
@@ -342,13 +343,13 @@ func (m *MSP) readMSPV2Frame() (*MSPFrame, error) {
 	var payload []byte
 	if payloadLength > 0 {
 		payload = make([]byte, payloadLength)
-		if _, err := io.ReadFull(m.port, payload); err != nil {
+		if _, err := io.ReadFull(m.Port, payload); err != nil {
 			return nil, err
 		}
 	}
 
 	buf = make([]byte, 1)
-	if _, err := m.port.Read(buf); err != nil {
+	if _, err := m.Port.Read(buf); err != nil {
 		return nil, err
 	}
 	// crc := buf[0]
@@ -360,7 +361,7 @@ func (m *MSP) readMSPV2Frame() (*MSPFrame, error) {
 }
 
 func (m *MSP) ReadFrame() (*MSPFrame, error) {
-	port := m.port
+	port := m.Port
 	if port == nil {
 		return nil, io.EOF
 	}
@@ -394,16 +395,16 @@ func (m *MSP) ReadFrame() (*MSPFrame, error) {
 func (m *MSP) RebootIntoBootloader() (int, error) {
 	// reboot_character is 'R' by default, but it can be changed
 	// TODO: Retrieve it if possible (in inav it can be done via MSPv2)
-	return m.port.Write([]byte{'R'})
+	return m.Port.Write([]byte{'R'})
 }
 
 // Close closes the underlying serial port. Note that reading from or
 // writing to a closed MSP will cause a panic.
 func (m *MSP) Close() error {
 	var err error
-	if m.port != nil {
-		if err = m.port.Close(); err == nil {
-			m.port = nil
+	if m.Port != nil {
+		if err = m.Port.Close(); err == nil {
+			m.Port = nil
 		}
 	}
 	return err
