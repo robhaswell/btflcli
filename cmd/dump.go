@@ -78,16 +78,17 @@ func dumpBoard(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	p := fc.Port
 	diffFilename := fmt.Sprintf("%s/%s_%d.%d.%d_DIFF.txt", fc.Name, fc.Variant, fc.VersionMajor, fc.VersionMinor, fc.VersionPatch)
 	dumpFilename := fmt.Sprintf("%s/%s_%d.%d.%d_DUMP.txt", fc.Name, fc.Variant, fc.VersionMajor, fc.VersionMinor, fc.VersionPatch)
 
 	// Create a reader utility to read from the flight controller
-	reader := bufio.NewReader(fc.Port)
+	reader := bufio.NewReader(p)
 	scanner := bufio.NewScanner(reader)
 	scanner.Split(bufio.ScanLines)
 
 	// Activate the CLI mode
-	fc.Port.Write([]byte("#\r\n"))
+	p.Write([]byte("#\r\n"))
 
 	for scanner.Scan() {
 		// Read a line from the flight controller
@@ -100,7 +101,7 @@ func dumpBoard(cmd *cobra.Command, args []string) {
 	}
 
 	// Request a diff
-	fc.Port.Write([]byte("diff all\r\n"))
+	p.Write([]byte("diff all\r\n"))
 	diffAll := readFcDump(scanner)
 
 	// Make the output directory if it doesn't exist
@@ -112,11 +113,11 @@ func dumpBoard(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
-	// reader.Reset(fc.Port)
+	// reader.Reset(p)
 	// log.Println(scanner.Text())
 
 	// Request a dump
-	fc.Port.Write([]byte("dump all\r\n"))
+	p.Write([]byte("dump all\r\n"))
 	dumpAll := readFcDump(scanner)
 
 	// Write the dump to a file
@@ -126,7 +127,7 @@ func dumpBoard(cmd *cobra.Command, args []string) {
 	}
 	fmt.Printf("Written files: %s, %s\n", diffFilename, dumpFilename)
 
-	closeFcCli(fc.Port)
+	closeFcCli(p)
 }
 
 func readFcDump(scanner *bufio.Scanner) string {
