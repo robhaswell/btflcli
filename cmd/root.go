@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,18 +21,21 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
-
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "btflcli",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Short: "A command-line interface to dump and restore Betaflight configurations",
+	Long: `This application will connect to a connected Betaflight flight controller and dump the configuration to a file.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+It can also restore a configuration from a file to a connected flight controller.
+
+The 'dump' command will create files in a directory matching the craft_name, with filenames matching the version of Betaflight. E.g.:
+
+My Quad/BTFL_4.4.2_DUMP.txt
+My Quad/BTFL_4.4.2_DIFF.txt
+
+Use the 'load' command and pass a filename to load the contents of a file to the connected flight controller.
+`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
@@ -58,5 +61,3 @@ func init() {
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
-
-
