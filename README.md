@@ -3,7 +3,7 @@ A command-line interface to dump and restore Betaflight configurations.
 
 ## Installation
 
-Copy the binary from the [latest release](releases) to a suitable place in your PATH.
+Copy the binary from the [latest release](https://github.com/robhaswell/btflcli/releases) to a suitable place in your PATH.
 
 ## Usage
 
